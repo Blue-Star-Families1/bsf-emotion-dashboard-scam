@@ -1,0 +1,330 @@
+[
+  {
+    "id": "scam_pkg_01",
+    "label": "scam",
+    "category": "package_smishing",
+    "text": "USPS: Your package is on hold. Confirm your address and pay a $1.99 redelivery fee here today: https://usps-help-track-now.com",
+    "source_name": "USPIS smishing advisory",
+    "source_url": "https://www.uspis.gov/news/scam-article/smishing-package-tracking-text-scams"
+  },
+  {
+    "id": "scam_pkg_02",
+    "label": "scam",
+    "category": "package_smishing",
+    "text": "Postal notice: your shipment will be returned to sender unless you update delivery details now at bit.ly/redelivery-help.",
+    "source_name": "USPIS smishing advisory",
+    "source_url": "https://www.uspis.gov/news/scam-article/smishing-package-tracking-text-scams"
+  },
+  {
+    "id": "scam_rewards_01",
+    "label": "scam",
+    "category": "reward_points_phishing",
+    "text": "Your reward points expire today. Tap this link now to verify your account and keep them active: https://reward-balance-secure.com",
+    "source_name": "FTC reward points text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/got-text-about-expiring-reward-points-look-closer"
+  },
+  {
+    "id": "scam_toll_01",
+    "label": "scam",
+    "category": "traffic_toll_smishing",
+    "text": "Final notice: unpaid traffic violation. Pay today to avoid a hearing and license suspension: https://pay-traffic-fast.co",
+    "source_name": "FTC traffic violation text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/text-about-traffic-violation-probably-scam"
+  },
+  {
+    "id": "scam_tax_01",
+    "label": "scam",
+    "category": "tax_refund_phishing",
+    "text": "IRS refund pending. This is the last step. Verify your banking details right now to release your tax refund.",
+    "source_name": "FTC tax refund scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/text-or-email-about-your-tax-refund-scam"
+  },
+  {
+    "id": "scam_loan_01",
+    "label": "scam",
+    "category": "loan_text_scam",
+    "text": "You are preapproved for a $12,000 loan. Reply YES to finish your application and confirm your bank account.",
+    "source_name": "FTC fake loan text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/can-you-spot-fake-loan-text-scam"
+  },
+  {
+    "id": "scam_loan_02",
+    "label": "scam",
+    "category": "loan_text_scam",
+    "text": "We are following up on your loan request. Just reply YES now and send your SSN to release funds today.",
+    "source_name": "FTC fake loan text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/can-you-spot-fake-loan-text-scam"
+  },
+  {
+    "id": "scam_job_01",
+    "label": "scam",
+    "category": "fake_recruiter",
+    "text": "Hello, I am recruiting for a remote position paying $300 daily. Reply INTERESTED for an interview on WhatsApp.",
+    "source_name": "FTC fake recruiter job text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/job-offer-text-probably-scam"
+  },
+  {
+    "id": "scam_job_02",
+    "label": "scam",
+    "category": "fake_recruiter",
+    "text": "Known company recruiter here. Weekly pay for an online assessor role. Message me on Telegram to start tonight.",
+    "source_name": "FTC fake recruiter job text alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/job-offer-text-probably-scam"
+  },
+  {
+    "id": "scam_task_01",
+    "label": "scam",
+    "category": "task_crypto_scam",
+    "text": "Optimization work available. Complete simple clicks and top up with USDT to unlock higher commissions.",
+    "source_name": "FBI IC3 work-from-home scam PSA",
+    "source_url": "https://www.ic3.gov/PSA/2024/PSA240604"
+  },
+  {
+    "id": "scam_task_02",
+    "label": "scam",
+    "category": "task_crypto_scam",
+    "text": "Task platform shows you already earned money. Deposit crypto now to release your combo task bonus.",
+    "source_name": "FBI IC3 work-from-home scam PSA",
+    "source_url": "https://www.ic3.gov/PSA/2024/PSA240604"
+  },
+  {
+    "id": "scam_boss_01",
+    "label": "scam",
+    "category": "boss_gift_card",
+    "text": "Hey, this is your boss. I need an urgent favor before the meeting. Buy five gift cards and text me the numbers on the back.",
+    "source_name": "FTC boss gift card scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/no-thats-not-your-boss-asking-you-buy-gift-cards"
+  },
+  {
+    "id": "scam_boss_02",
+    "label": "scam",
+    "category": "boss_gift_card",
+    "text": "Please grab Google certificates for the team event and send the PINs right away. Do not call, I am in a meeting.",
+    "source_name": "FTC boss gift card scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/no-thats-not-your-boss-asking-you-buy-gift-cards"
+  },
+  {
+    "id": "scam_prize_01",
+    "label": "scam",
+    "category": "prize_fee_scam",
+    "text": "Congratulations, you have won a laptop. Pay shipping and handling today to claim your prize.",
+    "source_name": "FTC prize scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/03/random-call-saying-youve-won-prize-scam"
+  },
+  {
+    "id": "scam_prize_02",
+    "label": "scam",
+    "category": "prize_fee_scam",
+    "text": "Sweepstakes notice: your cash prize is ready, but we need the processing fee before release.",
+    "source_name": "FTC prize scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/03/random-call-saying-youve-won-prize-scam"
+  },
+  {
+    "id": "scam_invest_01",
+    "label": "scam",
+    "category": "investment_scam",
+    "text": "I can coach you to double your money fast with forex. Guaranteed returns, no risk, DM me on WhatsApp.",
+    "source_name": "FTC investment scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/people-losing-big-investment-scams-learn-how-spot-and-avoid-them"
+  },
+  {
+    "id": "scam_invest_02",
+    "label": "scam",
+    "category": "investment_scam",
+    "text": "Crypto signal group made 300% this week. Send your first deposit now and I will manage it for you.",
+    "source_name": "FTC investment scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/people-losing-big-investment-scams-learn-how-spot-and-avoid-them"
+  },
+  {
+    "id": "scam_safe_01",
+    "label": "scam",
+    "category": "safe_account_impostor",
+    "text": "Fraud department alert: your bank account is at risk. Withdraw cash and move it to a safe account immediately.",
+    "source_name": "FTC money at risk impostor alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/how-handle-unexpected-calls-claim-your-money-risk"
+  },
+  {
+    "id": "scam_safe_02",
+    "label": "scam",
+    "category": "safe_account_impostor",
+    "text": "Government investigator says your savings are not safe. Buy gold today to protect your money.",
+    "source_name": "FTC money at risk impostor alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/01/how-handle-unexpected-calls-claim-your-money-risk"
+  },
+  {
+    "id": "scam_unclaimed_01",
+    "label": "scam",
+    "category": "unclaimed_funds_scam",
+    "text": "State office located unclaimed funds for you. Verify your SSN and debit card now to release payment.",
+    "source_name": "FTC unclaimed funds alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/03/how-handle-unexpected-calls-about-unclaimed-funds"
+  },
+  {
+    "id": "scam_debt_01",
+    "label": "scam",
+    "category": "debt_relief_scam",
+    "text": "We can erase your debt today. Pay our enrollment fee first and your balances will disappear.",
+    "source_name": "FTC debt relief scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/03/looking-debt-relief-heres-how-avoid-scam"
+  },
+  {
+    "id": "scam_mortgage_01",
+    "label": "scam",
+    "category": "mortgage_relief_scam",
+    "text": "You are approved for mortgage relief. Send the processing fee and your login so we can secure the program.",
+    "source_name": "FTC mortgage relief scam alert",
+    "source_url": "https://consumer.ftc.gov/consumer-alerts/2026/04/could-mortgage-relief-offer-be-scam"
+  },
+  {
+    "id": "scam_charity_01",
+    "label": "scam",
+    "category": "charity_romance_scam",
+    "text": "I help run an orphanage overseas. Kindly send support by crypto and continue the conversation on Telegram.",
+    "source_name": "Existing production scam pattern",
+    "source_url": "https://consumer.ftc.gov/scams"
+  },
+  {
+    "id": "scam_charity_02",
+    "label": "scam",
+    "category": "charity_romance_scam",
+    "text": "Sugar daddy arrangement available. Weekly allowance after you pay the clearance fee on Cash App.",
+    "source_name": "Existing production scam pattern",
+    "source_url": "https://consumer.ftc.gov/scams"
+  },
+  {
+    "id": "scam_benefits_01",
+    "label": "scam",
+    "category": "military_impostor_scam",
+    "text": "VA advocate here. Message me on Signal with your SSN so I can unlock your survivor benefits fast.",
+    "source_name": "Military-context adversarial control",
+    "source_url": "https://consumer.ftc.gov/scams"
+  },
+  {
+    "id": "legit_pcs_01",
+    "label": "legit",
+    "category": "pcs_support",
+    "text": "PCS to Norfolk this summer. If anyone wants my moving checklist, DM me and I am happy to share what helped our family.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_business_01",
+    "label": "legit",
+    "category": "small_business",
+    "text": "I am a military spouse photographer in El Paso. My portfolio and booking calendar are on my website if anyone needs family photos.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_giveaway_01",
+    "label": "legit",
+    "category": "free_item",
+    "text": "Giving away two toddler gates near base, no charge, porch pickup only for any family that needs them.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_housing_01",
+    "label": "legit",
+    "category": "housing_advice",
+    "text": "Can someone recommend a realtor near Fort Liberty? You can email me at jane.parker@example.com if that is easier.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_childcare_01",
+    "label": "legit",
+    "category": "family_support",
+    "text": "My husband is deploying and I am looking for childcare recommendations in San Diego. I would appreciate any advice from local families.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_mealtrain_01",
+    "label": "legit",
+    "category": "community_support",
+    "text": "We are organizing meal support for a family after surgery. The official SignUpGenius link is below if you want to help.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_job_01",
+    "label": "legit",
+    "category": "legit_job_post",
+    "text": "Our nonprofit has a part-time remote admin assistant opening. Apply through the company website only. There are no fees or purchases involved.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_package_01",
+    "label": "legit",
+    "category": "logistics_discussion",
+    "text": "PCS tip request: USPS delayed one of our boxes again. Has anyone dealt with package tracking problems during a move?",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_fundraiser_01",
+    "label": "legit",
+    "category": "official_fundraiser",
+    "text": "Our FRG fundraiser GoFundMe is linked from the official chapter page. Please donate only if you want to support travel scholarships.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_peer_01",
+    "label": "legit",
+    "category": "peer_support",
+    "text": "Thank you to everyone who answered my EFMP questions. My phone number is below if another parent needs the therapy contact list.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_volunteer_01",
+    "label": "legit",
+    "category": "volunteer_coordination",
+    "text": "Volunteer needed for Saturday food pantry. Message me if you can help unload boxes for an hour.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_rewards_01",
+    "label": "legit",
+    "category": "scam_awareness",
+    "text": "Does anyone know whether AAFES reward points really expire this month? I only trust the official app, not random texts.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_resume_01",
+    "label": "legit",
+    "category": "small_business",
+    "text": "I do resume coaching for military spouses and my calendar is on my website if anyone wants feedback before applying for jobs.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_lost_01",
+    "label": "legit",
+    "category": "community_notice",
+    "text": "Lost wallet near the CDC this morning. If anyone found it, please call me at 555-222-8181.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_va_01",
+    "label": "legit",
+    "category": "benefits_question",
+    "text": "Looking for advice on VA paperwork appeal timelines because I am not sure what step comes next.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  },
+  {
+    "id": "legit_loan_01",
+    "label": "legit",
+    "category": "benefits_question",
+    "text": "Has anyone recently used Navy Federal for a home loan? I am comparing options before we buy after this PCS.",
+    "source_name": "BSF-style legitimate control",
+    "source_url": ""
+  }
+]

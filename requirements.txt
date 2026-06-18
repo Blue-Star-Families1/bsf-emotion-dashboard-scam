@@ -1,0 +1,29 @@
+streamlit>=1.30,<2
+altair>=5,<7
+pandas<2.3; python_version < "3.14"
+pandas; python_version >= "3.14"
+numpy>=1.26,<2; python_version < "3.14"
+numpy; python_version >= "3.14"
+matplotlib
+plotly
+python-dotenv==1.0.0
+pytz
+requests
+sqlalchemy
+snowflake-sqlalchemy
+snowflake-connector-python>=3.0.0
+# Python-version specific ML pins to keep both local (3.11) and cloud (3.14) stable.
+# numpy<2 is mandatory below for torch 2.2.2 / transformers 4.41.2 — newer numpy breaks the lazy pipeline import.
+transformers==4.41.2; python_version < "3.14"
+torch==2.2.2; python_version < "3.14"
+transformers==5.8.1; python_version >= "3.14"
+torch==2.12.0; python_version >= "3.14"
+toml
+cryptography==41.0.7
+google-generativeai
+google-genai
+scikit-learn<1.5; python_version < "3.14"
+scikit-learn; python_version >= "3.14"
+huggingface_hub
+datasets<3; python_version < "3.14"
+datasets; python_version >= "3.14"
