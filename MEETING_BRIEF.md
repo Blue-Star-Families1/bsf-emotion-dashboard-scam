@@ -1,14 +1,16 @@
 # BSF Scam Detection Pipeline — Technical Brief
 ## For Coworker Meeting (May 5, 2026)
 
+> **Historical brief:** Architecture and repository status below have been reconciled where practical, but benchmark values remain historical and should be re-run before use in current decisions.
+
 ---
 
 ## 🎯 **Executive Summary**
 
 **What:** 3-tier fraud/scam detection system for BSF Community Wellness Dashboard  
-**Where:** Production (`main` branch, commit `fdc646a`)  
-**Performance:** 96.2% precision on BSF-scam corpus; expanding to generic spam (SMS/email)  
-**Status:** Ready for integration with bot-removal workflows  
+**Where:** Integrated in the repository's current `main` history
+**Historical performance:** 96.2% precision was previously reported for the BSF-scam corpus; re-run the benchmark before citing it as current
+**Status:** 3-tier fraud handling is integrated; bot-removal workflow integration remains a separate decision
 
 ---
 
@@ -21,7 +23,7 @@ INPUT (Comment Text)
     • 15 term lists (gift cards, crypto, phishing, job fraud, etc.)
     • 4 generic spam lists (lottery, phishing, SMS, financial)
     • Deterministic regex + keyword scoring
-    • Escalate if score ≥ 6 OR shortlink detected
+    • Escalate through severity classification at score ≥ 5; shortlinks are HIGH severity
     ✅ Cost: $0 | Speed: <10ms | No API calls
     ↓
 [TIER 2: Gemini Structured Classification]
@@ -39,6 +41,10 @@ INPUT (Comment Text)
     • Override suppresses false positives on military community patterns
     • Output: {context_pass=suppress | context_fail=confirm_flag}
     ✅ Cost: ~$0.02/1000 msgs | Speed: 2-3s/msg | Cached daily
+    ↓
+[TIER 3: Deterministic Context Gates]
+    • Peer-support, legitimate-business, and scam-awareness safe contexts
+    • New-account metadata risk routes uncertain items to audit review
     ↓
 OUTPUT
     • CRITICAL: Scam + high confidence → Instant escalation
@@ -63,10 +69,10 @@ OUTPUT
 - **Full Pipeline:** Precision 1.0, Recall 0.02 (very conservative)
 - ✅ **Interpretation:** By design—prioritizes NO false positives on community posts
 
-### **With Tier 1 Generic Spam Terms (May 5 improvements)**
-- **Expected Recall:** +1,500% improvement (0.02 → ~0.32)
-- **Expected Precision:** ~95% (slight false-positive increase, masked by Tier 2.5)
-- ✅ **Interpretation:** Better SMS/email spam coverage, maintains scam precision
+### **With Tier 1 Generic Spam Terms (May 5 projection)**
+- **Projected recall:** +1,500% improvement (0.02 → ~0.32)
+- **Projected precision:** ~95%
+- These were estimates, not measured results; re-run the curated benchmark before presenting current performance.
 
 ---
 
@@ -161,7 +167,7 @@ st.session_state['ab_block_threshold'] = 0.70
 - [x] Code merged to `main` (commit `fdc646a`)
 - [x] Tier 1 generic spam improvements added
 - [x] Benchmark corpus validated (41 examples)
-- [ ] **PENDING:** Push Tier 1 improvements to `origin/main`
+- [x] Repository history is pushed to `origin/main`
 - [ ] Deploy to production environment
 - [ ] Monitor false positive rate (target: <5%)
 - [ ] Collect feedback from BSF moderators

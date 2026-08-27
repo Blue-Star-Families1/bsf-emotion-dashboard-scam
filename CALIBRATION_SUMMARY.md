@@ -29,10 +29,10 @@
 - Gate: Requires ≥0.08 contextual distress (prevents false positives)
 - Implementation: `has_hardship_trigger & contextual_distress >= 0.08`
 
-### Expected Impact on Week 24
-- **Tier-1 candidates**: 6 → **~12-18** (100-200% increase)
-- **Ground-truth hits**: 0/9 → **~7-9/9** (78-100% recall)
-- **Key targets:** Should catch indices 9, 27, 28, 57, 75, 102, 153, 160, 162
+### Historical Week 24 Estimate (Not a Measured Result)
+- The earlier projection was **~12-18** Tier-1 candidates and **~7-9/9** ground-truth hits.
+- Those values were planning estimates and must not be cited as observed performance.
+- Run the explicitly gated live calibration scripts against available Week 24 data before reporting current metrics.
 
 ### Gemini Prompt Assessment
 - ✅ **Production-ready and excellent**
@@ -161,9 +161,9 @@
 
 ---
 
-## 3. INTEGRATION ROADMAP (Surgical Changes to detect_scam_concerns)
+## 3. INTEGRATION STATUS
 
-**Minimal modifications to existing pipeline**:
+The 3-tier logic is integrated into `detect_scam_concerns()`. The production path now:
 
 1. After `heuristic_scan()`: Call `classify_fraud_severity()` for severity level
 2. Track `severity_level` in candidate dict
@@ -207,15 +207,17 @@
 
 ---
 
-## 6. NEXT STEPS (Ready for User)
+## 6. CURRENT VALIDATION STATUS
 
-### Immediate (User Decision):
+### Completed:
 1. ✅ **DONE**: 4-point emotion calibration implemented
 2. ✅ **DONE**: 3-tier fraud detection framework implemented
 3. ✅ **DONE**: Code validated (no syntax errors)
-4. ⏳ **RUNNING**: Week 24 emotion test (should complete soon)
-5. **PENDING**: Integrate 3-tier into `detect_scam_concerns()` (surgical changes only)
-6. **PENDING**: Run fraud detection benchmarking on sample data
+4. ✅ **DONE**: 3-tier integration in `detect_scam_concerns()`
+5. ✅ **DONE**: Deterministic offline production-policy and disposition regression tests
+
+### Still requires live data:
+- Week 24 calibration metrics and Snowflake integration behavior must be run explicitly with `RUN_LIVE_TESTS=1` in a configured environment.
 
 ### Future (Optimization Phase):
 - A/B experiment: 3-tier vs 2-tier on production subset
@@ -253,10 +255,10 @@
 | Fraud: Severity Class | `classify_fraud_severity()` | 1691 | ✅ Done |
 | Fraud: Tier 3 Gates | `apply_tier3_context_gates()` | 1755 | ✅ Done |
 | Fraud: Gemini Enhanced | `_gemini_fraud_confidence_justification_cached()` | 1825 | ✅ Done |
-| Integration | `detect_scam_concerns()` | TBD | ⏳ Pending |
+| Integration | `detect_scam_concerns()` | See current source | ✅ Done |
 
 ---
 
-**Status**: 🟢 **READY FOR TESTING & INTEGRATION**
+**Status**: 🟢 **INTEGRATED; OFFLINE TESTS AVAILABLE**
 
-All code implemented, validated, and documented. Awaiting Week 24 test results and user approval for detect_scam_concerns() integration.
+Live Week 24 metrics remain unverified unless the gated Snowflake tests run with data available.

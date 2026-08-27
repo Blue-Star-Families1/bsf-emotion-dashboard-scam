@@ -33,7 +33,8 @@ try:
     for text, expected, desc in test_cases:
         result = app.scam_heuristic_scan(text)
         score = result['heuristic_score']
-        escalate = 1 if app.should_escalate_tier1(result) else 0
+        should_escalate, _ = app.classify_fraud_severity(result)
+        escalate = 1 if should_escalate else 0
         match = escalate == expected
         results.append(match)
         
@@ -165,11 +166,11 @@ try:
     results.append(severity_rules_ok)
     
     print("\n" + "=" * 70)
-    if accuracy == 100:
+    if all(results):
         print("RESULT: Tier 1 policy validated successfully")
         sys.exit(0)
     else:
-        print("RESULT: Tier 1 policy mismatch detected - review scoring logic")
+        print(f"RESULT: Tier 1 policy mismatch detected - {sum(results)}/{len(results)} checks passed")
         sys.exit(1)
 
 except Exception as e:

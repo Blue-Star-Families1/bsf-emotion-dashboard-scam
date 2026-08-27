@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 """Quick integration test for 3-tier fraud detection in detect_scam_concerns()"""
+import os
+import sys
+
+if os.getenv("RUN_LIVE_TESTS") != "1":
+    print("SKIP: set RUN_LIVE_TESTS=1 to run the Snowflake-backed integration test.")
+    sys.exit(0)
+
 import app
 
 app.load_data_for_week.clear()
 df = app.load_data_for_week(24, 2025, show_progress=False)
 print(f"Loaded {len(df)} Week 24 comments")
+if df.empty:
+    print("ERROR: live integration requested, but Week 24 data is unavailable.", file=sys.stderr)
+    sys.exit(1)
 
 # Run detect_scam_concerns with new 3-tier pipeline
 print("\nRunning detect_scam_concerns with 3-tier fraud detection...")
@@ -42,5 +52,4 @@ if scam_concerns:
 else:
     print("  (No scam concerns flagged in Week 24)")
 
-print("\nOK: 3-tier fraud detection integration test complete")
 print("\nOK: 3-tier fraud detection integration test complete")

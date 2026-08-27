@@ -580,6 +580,13 @@ def verify_user(email, password):
     email = email.lower().strip()
     return users.get(email) == password
 
+
+def clear_authenticated_session():
+    """Remove all session values so logout cannot retain identity or analysis data."""
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.session_state['authenticated'] = False
+
 @st.cache_data
 def get_image_as_base64(file):
     try:
@@ -670,8 +677,9 @@ def get_snowflake_engine():
         return engine, True
         
     except Exception as e:
+        print(f"Snowflake connection error: {e}", file=sys.stderr)
         st.error(":material/error: **Database Connection Failed**")
-        st.error(f"Please ensure your secrets are configured correctly for key-pair authentication. Error: {e}")
+        st.error("Please verify the database configuration or contact an administrator.")
         return None, False
 
 class RobustEmotionClassifier:
@@ -1098,8 +1106,9 @@ def load_data_for_week(week, year, show_progress=False):
                 get_snowflake_engine.clear()
                 continue
             else:
-                if status_container: st.error(f"Snowflake query error: {e}")
-                else: print(f"Snowflake query error: {e}", file=sys.stderr)
+                print(f"Snowflake query error: {e}", file=sys.stderr)
+                if status_container:
+                    st.error("The database query failed. Please try again or contact an administrator.")
                 return empty_weekly_data_frame()
 
     if df.empty:
@@ -2106,9 +2115,9 @@ def apply_tier3_context_gates(candidate: dict, df: pd.DataFrame = None) -> dict:
     # GATE 4: Metadata safety (account age, post history)
     # Note: requires df; if not provided, skip
     idx = candidate.get("index")
-    if df is not None and isinstance(idx, int):
+    if df is not None and idx in df.index:
         try:
-            row = df.iloc[idx]
+            row = df.loc[idx]
             # Check for user pattern indicators (if available)
             user_post_count = row.get("user_post_count", 1)
             account_days_old = row.get("account_days_old", 365)  # Default: assume 1 year
@@ -2291,7 +2300,7 @@ def detect_scam_concerns(
                 out["recommended_action"] = "flag_for_review"
                 out["reasons"].append(f"Tier 3 context override: {tier3_result['tier3_reason']}")
             elif out["recommended_action"] == "flag_for_review" and tier3_result["tier3_verdict"] == "new_account_risk":
-                out["recommended_action"] = "audit"
+                out["audit_reason"] = f"Tier 3 metadata flag: {tier3_result['tier3_reason']}"
                 out["reasons"].append(f"Tier 3 metadata flag: {tier3_result['tier3_reason']}")
 
         # TIER 2 FILTERING: Respect Gemini verdicts and A/B block threshold.
@@ -5726,7 +5735,7 @@ def run_dashboard():
 
     st.sidebar.markdown("---")
     if st.sidebar.button("🔒 Log Out", key="logout_btn", use_container_width=True):
-        st.session_state['authenticated'] = False
+        clear_authenticated_session()
         st.rerun()
 
 def main():

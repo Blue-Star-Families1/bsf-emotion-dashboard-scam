@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.streamlit/secrets.toml
+master_training_data.csv
+latest_generated_training_batch.csv
+latest_external_append_batch.csv
+latest_external_teacher_labeled_batch.csv
+exact_append_ready.csv
+mapped_append_ready.csv
+combined_external_append_ready.csv
+external_teacher_candidates.csv
+recommended_thresholds.json
+weekly_verified_counts_cache.json

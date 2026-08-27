@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """Week 24 calibration validation - measure impact of 4-point improvements"""
-import app
 import collections
+import os
+import sys
+
+if os.getenv("RUN_LIVE_TESTS") != "1":
+    print("SKIP: set RUN_LIVE_TESTS=1 to run the Snowflake-backed Week 24 test.")
+    sys.exit(0)
+
+import app
 
 week, year = 24, 2025
 # Verified ground-truth: only non-staff comments with clear member need/hardship
@@ -17,6 +24,9 @@ app.analyze_emotions_cached.clear()
 print("Loading data...")
 df = app.load_data_for_week(week, year, show_progress=False)
 print(f"Total rows: {len(df)}")
+if df.empty:
+    print("ERROR: live Week 24 test requested, but source data is unavailable.", file=sys.stderr)
+    sys.exit(1)
 
 print("Running emotion analysis...")
 df_em = app.analyze_emotions_cached(df, model_id='SamLowe/roberta-base-go_emotions')

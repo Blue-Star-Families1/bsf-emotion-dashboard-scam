@@ -32,16 +32,16 @@ try:
     print("-" * 70)
     
     tier1_escalations = 0
-    expected_escalations = [True, True, False, False, False]
+    expected_escalations = [True, True, False, True, False]
     actual_escalations = []
     for i, row in test_df.iterrows():
         result = app.scam_heuristic_scan(row['content'])
-        escalate = app.should_escalate_tier1(result)
+        escalate, severity = app.classify_fraud_severity(result)
         actual_escalations.append(bool(escalate))
         if escalate:
             tier1_escalations += 1
         status = "ESCALATE" if escalate else "PASS"
-        print(f"[{status}] Row {i}: Score={result['heuristic_score']} - {row['content'][:40]}")
+        print(f"[{status}] Row {i}: Score={result['heuristic_score']} Severity={severity} - {row['content'][:40]}")
     
     print(f"\nTier 1 escalation rate: {tier1_escalations}/{len(test_df)} = {(tier1_escalations/len(test_df)*100):.0f}%")
     if actual_escalations == expected_escalations:
@@ -50,6 +50,59 @@ try:
         print("[ERROR] Tier 1 escalation policy drift detected")
         print(f"        Expected: {expected_escalations}")
         print(f"        Actual:   {actual_escalations}")
+        sys.exit(1)
+
+    print("\n[TEST] Tier 3 metadata lookup and audit disposition")
+    print("-" * 70)
+    metadata_df = pd.DataFrame({
+        'content': ["Congratulations you won! Claim prize http://example.com"],
+        'commenter_name': ['new-user'],
+        'commenter_email': ['new-user@example.com'],
+        'user_post_count': [1],
+        'account_days_old': [2],
+    }, index=[42])
+    gate = app.apply_tier3_context_gates({
+        'index': 42,
+        'comment': metadata_df.loc[42, 'content'],
+        'commenter_name': 'new-user',
+    }, metadata_df)
+
+    original_classifier = app._gemini_scam_classify_cached
+    original_context_check = app._gemini_military_context_check_cached
+    app._gemini_scam_classify_cached = lambda _text: '{"reasoning":"suspicious prize claim","is_scam":true,"confidence":0.70,"recommended_action":"flag_for_review","indicators":["claim your"]}'
+    app._gemini_military_context_check_cached = lambda _text: '{"context_verdict":"context_fail","bsf_pattern":"predatory"}'
+    app.st.session_state['audit_queue'] = []
+    try:
+        metadata_flags = app.detect_scam_concerns(metadata_df, silent=True, include_trusted_users=True)
+        metadata_audit = list(app.st.session_state.get('audit_queue', []))
+    finally:
+        app._gemini_scam_classify_cached = original_classifier
+        app._gemini_military_context_check_cached = original_context_check
+
+    metadata_ok = (
+        gate.get('tier3_verdict') == 'new_account_risk'
+        and metadata_flags == []
+        and len(metadata_audit) == 1
+        and metadata_audit[0].get('tier3_verdict') == 'new_account_risk'
+    )
+    if metadata_ok:
+        print("[OK] Non-default index metadata is found and new-account risk reaches audit queue")
+    else:
+        print(f"[ERROR] Tier 3 regression: gate={gate}, flags={metadata_flags}, audit={metadata_audit}")
+        sys.exit(1)
+
+    print("\n[TEST] Logout clears sensitive session values")
+    print("-" * 70)
+    app.st.session_state['authenticated'] = True
+    app.st.session_state['user_email'] = 'member@example.com'
+    app.st.session_state['audit_queue'] = [{'comment': 'sensitive'}]
+    app.st.session_state['results'] = {'df': 'sensitive'}
+    app.clear_authenticated_session()
+    logout_ok = dict(app.st.session_state) == {'authenticated': False}
+    if logout_ok:
+        print("[OK] Logout leaves only the unauthenticated marker")
+    else:
+        print(f"[ERROR] Logout retained session keys: {list(app.st.session_state.keys())}")
         sys.exit(1)
     
     print("\n[TEST] Orchestration function signature")

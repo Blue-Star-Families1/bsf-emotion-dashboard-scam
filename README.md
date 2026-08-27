@@ -5,7 +5,7 @@ A Streamlit dashboard analyzing emotion trends in BSF forum discussions
 ## Local run
 
 1. Install dependencies from `requirements.txt`.
-2. Create a local `.streamlit/secrets.toml` (do **not** commit it).
+2. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`, replace every placeholder, and do **not** commit it.
 3. Run the app with Streamlit and open the local URL.
 
 For dev-container stability, `.streamlit/config.toml` sets `server.fileWatcherType = "none"` to prevent file-watcher mount hangs.
@@ -45,8 +45,9 @@ Before deploying to production:
 
 - Run `test_tier1.py` and require **100% pass**.
 - Run `test_pipeline.py` and require no policy-drift or integration errors.
+- Snowflake-backed scripts are live integration tests. Set `RUN_LIVE_TESTS=1` only in an environment with working Snowflake credentials; requested live tests fail if their data is unavailable.
 - Keep Tier-1 escalation policy consistent across code, UI text, and tests:
-	- `heuristic_score >= 10` **or** shortlink evidence.
+	- severity classification escalates scores `>= 5`, and shortlink evidence is always high severity.
 - Verify secrets are present in Streamlit Cloud and rotated if any previous key exposure occurred.
 - Gemini SDK policy:
 	- Prefer `google-genai` (modern SDK) in production.
