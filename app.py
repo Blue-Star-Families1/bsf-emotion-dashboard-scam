@@ -1849,6 +1849,7 @@ def scam_heuristic_scan(text: str) -> dict:
     return {"heuristic_score": int(score), "matched_terms": matched_unique}
 
 def should_escalate_tier1(heuristic_result: dict) -> bool:
+    """Apply the legacy standalone benchmark rule, not production pipeline policy."""
     if not isinstance(heuristic_result, dict):
         return False
     score = int(heuristic_result.get("heuristic_score", 0) or 0)

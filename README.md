@@ -46,8 +46,9 @@ Before deploying to production:
 - Run `test_tier1.py` and require **100% pass**.
 - Run `test_pipeline.py` and require no policy-drift or integration errors.
 - Snowflake-backed scripts are live integration tests. Set `RUN_LIVE_TESTS=1` only in an environment with working Snowflake credentials; requested live tests fail if their data is unavailable.
-- Keep Tier-1 escalation policy consistent across code, UI text, and tests:
-	- severity classification escalates scores `>= 5`, and shortlink evidence is always high severity.
+- Keep production escalation policy consistent across code, UI text, and tests:
+	- `detect_scam_concerns()` uses `classify_fraud_severity()`: scores `>= 5` escalate, and shortlink evidence is always high severity.
+	- `should_escalate_tier1()` retains the legacy score-`10`/shortlink rule only for the standalone Tier-1 benchmark in `evaluate_scam_benchmark()`; it does not control production pipeline escalation.
 - Verify secrets are present in Streamlit Cloud and rotated if any previous key exposure occurred.
 - Gemini SDK policy:
 	- Prefer `google-genai` (modern SDK) in production.
