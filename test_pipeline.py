@@ -7,159 +7,166 @@ import pandas as pd
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-try:
-    print("=" * 70)
-    print("FULL 3-TIER PIPELINE TEST")
-    print("=" * 70)
-    
-    import app
-    print("[OK] app.py imported")
-    
-    # Create small test dataset
-    test_df = pd.DataFrame({
-        'content': [
-            "Verify your account now: http://bit.ly/verify",  # Generic phishing
-            "Send me a DM on WhatsApp for crypto gift card",    # BSF scam
-            "Looking for PCS movers",                          # Legit
-            "Congratulations you won! Claim prize http://example.com",  # Lottery
-            "Hi, I'm a VA counselor, feel free to email me",  # Legit with email
-        ],
-        'commenter_name': ['user1', 'user2', 'user3', 'user4', 'user5'],
-        'commenter_email': ['u1@test.com', 'u2@test.com', 'u3@test.com', 'u4@test.com', 'u5@bsf.org'],
-    })
-    
-    print("\n[TEST] Tier 1 escalation rates")
-    print("-" * 70)
-    
-    tier1_escalations = 0
-    expected_escalations = [True, True, False, True, False]
-    actual_escalations = []
-    for i, row in test_df.iterrows():
-        result = app.scam_heuristic_scan(row['content'])
-        escalate, severity = app.classify_fraud_severity(result)
-        actual_escalations.append(bool(escalate))
-        if escalate:
-            tier1_escalations += 1
-        status = "ESCALATE" if escalate else "PASS"
-        print(f"[{status}] Row {i}: Score={result['heuristic_score']} Severity={severity} - {row['content'][:40]}")
-    
-    print(f"\nTier 1 escalation rate: {tier1_escalations}/{len(test_df)} = {(tier1_escalations/len(test_df)*100):.0f}%")
-    if actual_escalations == expected_escalations:
-        print("[OK] Tier 1 escalation policy matches expected production behavior")
-    else:
-        print("[ERROR] Tier 1 escalation policy drift detected")
-        print(f"        Expected: {expected_escalations}")
-        print(f"        Actual:   {actual_escalations}")
-        sys.exit(1)
 
-    print("\n[TEST] Tier 3 metadata lookup and audit disposition")
-    print("-" * 70)
-    metadata_df = pd.DataFrame({
-        'content': ["Congratulations you won! Claim prize http://example.com"],
-        'commenter_name': ['new-user'],
-        'commenter_email': ['new-user@example.com'],
-        'user_post_count': [1],
-        'account_days_old': [2],
-    }, index=[42])
-    gate = app.apply_tier3_context_gates({
-        'index': 42,
-        'comment': metadata_df.loc[42, 'content'],
-        'commenter_name': 'new-user',
-    }, metadata_df)
-
-    original_classifier = app._gemini_scam_classify_cached
-    original_context_check = app._gemini_military_context_check_cached
-    app._gemini_scam_classify_cached = lambda _text: '{"reasoning":"suspicious prize claim","is_scam":true,"confidence":0.70,"recommended_action":"flag_for_review","indicators":["claim your"]}'
-    app._gemini_military_context_check_cached = lambda _text: '{"context_verdict":"context_fail","bsf_pattern":"predatory"}'
-    app.st.session_state['audit_queue'] = []
+def main():
     try:
-        metadata_flags = app.detect_scam_concerns(metadata_df, silent=True, include_trusted_users=True)
-        metadata_audit = list(app.st.session_state.get('audit_queue', []))
-    finally:
-        app._gemini_scam_classify_cached = original_classifier
-        app._gemini_military_context_check_cached = original_context_check
+        print("=" * 70)
+        print("FULL 3-TIER PIPELINE TEST")
+        print("=" * 70)
 
-    metadata_ok = (
-        gate.get('tier3_verdict') == 'new_account_risk'
-        and metadata_flags == []
-        and len(metadata_audit) == 1
-        and metadata_audit[0].get('tier3_verdict') == 'new_account_risk'
-    )
-    if metadata_ok:
-        print("[OK] Non-default index metadata is found and new-account risk reaches audit queue")
-    else:
-        print(f"[ERROR] Tier 3 regression: gate={gate}, flags={metadata_flags}, audit={metadata_audit}")
-        sys.exit(1)
+        import app
+        print("[OK] app.py imported")
 
-    print("\n[TEST] Logout clears sensitive session values")
-    print("-" * 70)
-    app.st.session_state['authenticated'] = True
-    app.st.session_state['user_email'] = 'member@example.com'
-    app.st.session_state['audit_queue'] = [{'comment': 'sensitive'}]
-    app.st.session_state['results'] = {'df': 'sensitive'}
-    app.clear_authenticated_session()
-    logout_ok = dict(app.st.session_state) == {'authenticated': False}
-    if logout_ok:
-        print("[OK] Logout leaves only the unauthenticated marker")
-    else:
-        print(f"[ERROR] Logout retained session keys: {list(app.st.session_state.keys())}")
-        sys.exit(1)
-    
-    print("\n[TEST] Orchestration function signature")
-    print("-" * 70)
-    
-    # Check if detect_scam_concerns function exists and is callable
-    if hasattr(app, 'detect_scam_concerns'):
-        print("[OK] detect_scam_concerns function exists")
-        func = app.detect_scam_concerns
-        print(f"      Function type: {type(func)}")
-        print(f"      Module: {func.__module__}")
-    else:
-        print("[ERROR] detect_scam_concerns function NOT FOUND")
-    
-    print("\n[TEST] Gemini availability")
-    print("-" * 70)
-    
-    # Check if Gemini is available
-    try:
-        gemini_model, available = app.load_gemini_model(app.FAST_REVIEW_MODEL_NAME)
-        if available:
-            print(f"[OK] Gemini available: {app.FAST_REVIEW_MODEL_NAME}")
+        # Create small test dataset
+        test_df = pd.DataFrame({
+            'content': [
+                "Verify your account now: http://bit.ly/verify",  # Generic phishing
+                "Send me a DM on WhatsApp for crypto gift card",    # BSF scam
+                "Looking for PCS movers",                          # Legit
+                "Congratulations you won! Claim prize http://example.com",  # Lottery
+                "Hi, I'm a VA counselor, feel free to email me",  # Legit with email
+            ],
+            'commenter_name': ['user1', 'user2', 'user3', 'user4', 'user5'],
+            'commenter_email': ['u1@test.com', 'u2@test.com', 'u3@test.com', 'u4@test.com', 'u5@bsf.org'],
+        })
+
+        print("\n[TEST] Tier 1 escalation rates")
+        print("-" * 70)
+
+        tier1_escalations = 0
+        expected_escalations = [True, True, False, True, False]
+        actual_escalations = []
+        for i, row in test_df.iterrows():
+            result = app.scam_heuristic_scan(row['content'])
+            escalate, severity = app.classify_fraud_severity(result)
+            actual_escalations.append(bool(escalate))
+            if escalate:
+                tier1_escalations += 1
+            status = "ESCALATE" if escalate else "PASS"
+            print(f"[{status}] Row {i}: Score={result['heuristic_score']} Severity={severity} - {row['content'][:40]}")
+
+        print(f"\nTier 1 escalation rate: {tier1_escalations}/{len(test_df)} = {(tier1_escalations/len(test_df)*100):.0f}%")
+        if actual_escalations == expected_escalations:
+            print("[OK] Tier 1 escalation policy matches expected production behavior")
         else:
-            print(f"[WARN] Gemini not available (expected in non-production)")
-    except Exception as e:
-        print(f"[WARN] Gemini check skipped: {str(e)[:50]}")
-    
-    print("\n[TEST] Tier 2 prompt template")
-    print("-" * 70)
-    
-    if hasattr(app, 'SCAM_CHECK_PROMPT_TEMPLATE'):
-        template = app.SCAM_CHECK_PROMPT_TEMPLATE
-        print(f"[OK] SCAM_CHECK_PROMPT_TEMPLATE exists")
-        print(f"     Length: {len(template)} chars")
-        print(f"     Contains 'RED FLAGS': {'RED FLAGS' in template}")
-        print(f"     Contains 'GREEN FLAGS': {'GREEN FLAGS' in template}")
-    else:
-        print("[ERROR] SCAM_CHECK_PROMPT_TEMPLATE NOT FOUND")
-    
-    print("\n[TEST] Tier 2.5 military context prompt")
-    print("-" * 70)
-    
-    if hasattr(app, 'BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE'):
-        template = app.BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE
-        print(f"[OK] BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE exists")
-        print(f"     Length: {len(template)} chars")
-        print(f"     Contains 'PCS': {'PCS' in template}")
-        print(f"     Contains 'deployment': {'deployment' in template or 'Deployment' in template}")
-    else:
-        print("[ERROR] BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE NOT FOUND")
-    
-    print("\n" + "=" * 70)
-    print("RESULT: Pipeline infrastructure intact - ready for integration")
-    print("=" * 70)
+            print("[ERROR] Tier 1 escalation policy drift detected")
+            print(f"        Expected: {expected_escalations}")
+            print(f"        Actual:   {actual_escalations}")
+            return 1
 
-except Exception as e:
-    print(f"[ERROR] {e}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+        print("\n[TEST] Tier 3 metadata lookup and audit disposition")
+        print("-" * 70)
+        metadata_df = pd.DataFrame({
+            'content': ["Congratulations you won! Claim prize http://example.com"],
+            'commenter_name': ['new-user'],
+            'commenter_email': ['new-user@example.com'],
+            'user_post_count': [1],
+            'account_days_old': [2],
+        }, index=[42])
+        gate = app.apply_tier3_context_gates({
+            'index': 42,
+            'comment': metadata_df.loc[42, 'content'],
+            'commenter_name': 'new-user',
+        }, metadata_df)
+
+        original_classifier = app._gemini_scam_classify_cached
+        original_context_check = app._gemini_military_context_check_cached
+        app._gemini_scam_classify_cached = lambda _text: '{"reasoning":"suspicious prize claim","is_scam":true,"confidence":0.70,"recommended_action":"flag_for_review","indicators":["claim your"]}'
+        app._gemini_military_context_check_cached = lambda _text: '{"context_verdict":"context_fail","bsf_pattern":"predatory"}'
+        app.st.session_state['audit_queue'] = []
+        try:
+            metadata_flags = app.detect_scam_concerns(metadata_df, silent=True, include_trusted_users=True)
+            metadata_audit = list(app.st.session_state.get('audit_queue', []))
+        finally:
+            app._gemini_scam_classify_cached = original_classifier
+            app._gemini_military_context_check_cached = original_context_check
+
+        metadata_ok = (
+            gate.get('tier3_verdict') == 'new_account_risk'
+            and metadata_flags == []
+            and len(metadata_audit) == 1
+            and metadata_audit[0].get('tier3_verdict') == 'new_account_risk'
+        )
+        if metadata_ok:
+            print("[OK] Non-default index metadata is found and new-account risk reaches audit queue")
+        else:
+            print(f"[ERROR] Tier 3 regression: gate={gate}, flags={metadata_flags}, audit={metadata_audit}")
+            return 1
+
+        print("\n[TEST] Logout clears sensitive session values")
+        print("-" * 70)
+        app.st.session_state['authenticated'] = True
+        app.st.session_state['user_email'] = 'member@example.com'
+        app.st.session_state['audit_queue'] = [{'comment': 'sensitive'}]
+        app.st.session_state['results'] = {'df': 'sensitive'}
+        app.clear_authenticated_session()
+        logout_ok = dict(app.st.session_state) == {'authenticated': False}
+        if logout_ok:
+            print("[OK] Logout leaves only the unauthenticated marker")
+        else:
+            print(f"[ERROR] Logout retained session keys: {list(app.st.session_state.keys())}")
+            return 1
+
+        print("\n[TEST] Orchestration function signature")
+        print("-" * 70)
+
+        # Check if detect_scam_concerns function exists and is callable
+        if hasattr(app, 'detect_scam_concerns'):
+            print("[OK] detect_scam_concerns function exists")
+            func = app.detect_scam_concerns
+            print(f"      Function type: {type(func)}")
+            print(f"      Module: {func.__module__}")
+        else:
+            print("[ERROR] detect_scam_concerns function NOT FOUND")
+
+        print("\n[TEST] Gemini availability")
+        print("-" * 70)
+
+        # Check if Gemini is available
+        try:
+            gemini_model, available = app.load_gemini_model(app.FAST_REVIEW_MODEL_NAME)
+            if available:
+                print(f"[OK] Gemini available: {app.FAST_REVIEW_MODEL_NAME}")
+            else:
+                print(f"[WARN] Gemini not available (expected in non-production)")
+        except Exception as e:
+            print(f"[WARN] Gemini check skipped: {str(e)[:50]}")
+
+        print("\n[TEST] Tier 2 prompt template")
+        print("-" * 70)
+
+        if hasattr(app, 'SCAM_CHECK_PROMPT_TEMPLATE'):
+            template = app.SCAM_CHECK_PROMPT_TEMPLATE
+            print(f"[OK] SCAM_CHECK_PROMPT_TEMPLATE exists")
+            print(f"     Length: {len(template)} chars")
+            print(f"     Contains 'RED FLAGS': {'RED FLAGS' in template}")
+            print(f"     Contains 'GREEN FLAGS': {'GREEN FLAGS' in template}")
+        else:
+            print("[ERROR] SCAM_CHECK_PROMPT_TEMPLATE NOT FOUND")
+
+        print("\n[TEST] Tier 2.5 military context prompt")
+        print("-" * 70)
+
+        if hasattr(app, 'BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE'):
+            template = app.BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE
+            print(f"[OK] BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE exists")
+            print(f"     Length: {len(template)} chars")
+            print(f"     Contains 'PCS': {'PCS' in template}")
+            print(f"     Contains 'deployment': {'deployment' in template or 'Deployment' in template}")
+        else:
+            print("[ERROR] BSF_MILITARY_CONTEXT_PROMPT_TEMPLATE NOT FOUND")
+
+        print("\n" + "=" * 70)
+        print("RESULT: Pipeline infrastructure intact - ready for integration")
+        print("=" * 70)
+        return 0
+
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
