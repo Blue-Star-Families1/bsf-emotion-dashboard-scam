@@ -18,5 +18,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements.txt
+      - run: python test_sqlalchemy_compat.py
+      - run: python test_database_runtime.py
       - run: python test_pipeline.py
       - run: python test_tier1.py

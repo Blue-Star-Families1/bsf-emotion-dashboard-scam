@@ -10,7 +10,11 @@ if os.getenv("RUN_LIVE_TESTS") != "1":
 import app
 
 app.load_data_for_week.clear()
-df = app.load_data_for_week(24, 2025, show_progress=False)
+try:
+    df = app.load_data_for_week(24, 2025, show_progress=False)
+except app.WeeklyDataLoadError as error:
+    print(f"ERROR: live Snowflake data load failed: {error}", file=sys.stderr)
+    sys.exit(1)
 print(f"Loaded {len(df)} Week 24 comments")
 if df.empty:
     print("ERROR: live integration requested, but Week 24 data is unavailable.", file=sys.stderr)

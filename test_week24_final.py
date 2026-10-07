@@ -22,7 +22,11 @@ app.load_data_for_week.clear()
 app.analyze_emotions_cached.clear()
 
 print("Loading data...")
-df = app.load_data_for_week(week, year, show_progress=False)
+try:
+    df = app.load_data_for_week(week, year, show_progress=False)
+except app.WeeklyDataLoadError as error:
+    print(f"ERROR: live Snowflake data load failed: {error}", file=sys.stderr)
+    sys.exit(1)
 print(f"Total rows: {len(df)}")
 if df.empty:
     print("ERROR: live Week 24 test requested, but source data is unavailable.", file=sys.stderr)

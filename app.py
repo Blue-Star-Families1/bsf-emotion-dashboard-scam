@@ -637,6 +637,14 @@ def render_login_page():
 # --- CORE APP LOGIC & MODELS ---
 # ==========================================
 
+class WeeklyDataLoadError(RuntimeError):
+    """Raised when weekly data could not be loaded from Snowflake."""
+
+
+def _is_snowflake_sqlalchemy_compat_error(error):
+    error_text = str(error)
+    return "ORMSelectCompileState" in error_text or "sqlalchemy.orm.context" in error_text
+
 @st.cache_resource
 def get_snowflake_engine():
     try:
@@ -677,10 +685,15 @@ def get_snowflake_engine():
         return engine, True
         
     except Exception as e:
-        print(f"Snowflake connection error: {e}", file=sys.stderr)
-        st.error(":material/error: **Database Connection Failed**")
-        st.error("Please verify the database configuration or contact an administrator.")
-        return None, False
+        if _is_snowflake_sqlalchemy_compat_error(e):
+            print(f"Snowflake dependency compatibility error: {e}", file=sys.stderr)
+            st.error(":material/error: **Database Runtime Incompatible**")
+            st.error("The deployed database packages are incompatible. Please contact an administrator.")
+        else:
+            print(f"Snowflake connection error: {e}", file=sys.stderr)
+            st.error(":material/error: **Database Connection Failed**")
+            st.error("Please verify the database configuration or contact an administrator.")
+        raise WeeklyDataLoadError("Snowflake engine initialization failed.") from e
 
 class RobustEmotionClassifier:
     """Fallback classifier that bypasses transformers.pipeline import issues on some runtimes."""
@@ -1022,7 +1035,7 @@ def load_scam_detection_window(anchor_week: int, anchor_year: int, window_weeks:
         y, w, _ = target_date.isocalendar()
         week_label = f"W{w}/{y}"
         week_df = load_data_for_week(w, y, show_progress=False)
-        if week_df is None or week_df.empty:
+        if week_df.empty:
             continue
 
         week_df = week_df.copy()
@@ -1047,7 +1060,7 @@ def load_data_for_week(week, year, show_progress=False):
             if not snowflake_available:
                 if show_progress: st.error("Snowflake connection not available.")
                 else: print("Snowflake connection not available.", file=sys.stderr)
-                return empty_weekly_data_frame()
+                raise WeeklyDataLoadError("Snowflake engine is unavailable.")
 
             if status_container: status_container.info(f":material/sync: Querying Snowflake for Posts & Comments... (Attempt {attempt + 1})")
             
@@ -1093,12 +1106,14 @@ def load_data_for_week(week, year, show_progress=False):
             if not df.empty and 'content' in df.columns:
                 df['content'] = df['content'].apply(clean_text)
             
-            if status_container: 
+            if status_container and not df.empty:
                 post_count = len(df[df['activity_type'] == 'Original Post'])
                 comment_count = len(df[df['activity_type'] == 'Comment'])
                 status_container.success(f":material/check_circle: Found {len(df)} total interactions ({post_count} Posts, {comment_count} Comments) for Week {week}, {year}")
             break
 
+        except WeeklyDataLoadError:
+            raise
         except Exception as e:
             is_token_error = isinstance(getattr(e, 'orig', None), ProgrammingError) and "Authentication token has expired" in str(e.orig)
             if is_token_error and attempt == 0:
@@ -1109,11 +1124,11 @@ def load_data_for_week(week, year, show_progress=False):
                 print(f"Snowflake query error: {e}", file=sys.stderr)
                 if status_container:
                     st.error("The database query failed. Please try again or contact an administrator.")
-                return empty_weekly_data_frame()
+                raise WeeklyDataLoadError(f"Snowflake query failed for Week {week}, {year}.") from e
 
     if df.empty:
         if show_progress:
-            st.error("No data found for this week.")
+            status_container.info("No data found for this week.")
         else:
             print(f"No data found for Week {week}, {year}.", file=sys.stderr)
         return empty_weekly_data_frame()
@@ -2951,12 +2966,6 @@ def _save_weekly_verified_counts(year, week, severe_count, scam_count, comment_c
 
 
 def create_dual_trend_plot(selected_week, selected_year, selected_week_data, model_id):
-    engine, snowflake_available = get_snowflake_engine()
-    if not snowflake_available:
-        fig = go.Figure()
-        fig.add_annotation(text="Trend data requires database connection", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
-        return fig
-    
     weeks_to_display =[]
     selected_year_int = int(selected_year)
     try: start_date_of_selected_week, _ = get_week_dates(selected_year_int, selected_week)
@@ -2968,15 +2977,27 @@ def create_dual_trend_plot(selected_week, selected_year, selected_week_data, mod
         weeks_to_display.append((year, week))
     
     week_labels, health_scores, severe_counts, comment_counts, scam_counts = [], [], [], [], []
+    unavailable_weeks = []
     trend_status = st.empty()
     trend_status.info(":material/sync: Analyzing 3-week trend history... This may take a moment.")
 
     verified_cache = _load_weekly_verified_cache()
 
     for i, (year, week) in enumerate(weeks_to_display):
-        df = load_data_for_week(week, year, show_progress=False)
         cached = verified_cache.get(f"{int(year)}-W{int(week):02d}")
-        if not df.empty:
+        try:
+            df = load_data_for_week(week, year, show_progress=False)
+        except WeeklyDataLoadError as e:
+            print(f"Historical trend load failed for Week {week}, {year}: {e}", file=sys.stderr)
+            unavailable_weeks.append(f"W{week}/{year}")
+            df = None
+
+        if df is None:
+            health_scores.append(None)
+            severe_counts.append(None)
+            scam_counts.append(None)
+            comment_counts.append(None)
+        elif not df.empty:
             df_em = analyze_emotions_cached(df, model_id=model_id)
             avg = df_em.mean()
             h_score = compute_health_score(avg)
@@ -3027,7 +3048,11 @@ def create_dual_trend_plot(selected_week, selected_year, selected_week_data, mod
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     
-    fig.add_trace(go.Bar(x=week_labels, y=health_scores, name='Health Score', marker_color='rgba(30, 144, 255, 0.6)', text=[f"<b>{s:.1f}</b><br>({c} interactions)" for s, c in zip(health_scores, comment_counts)], textposition='outside', textfont=dict(color='black', weight='bold')), secondary_y=False)
+    health_text = [
+        f"<b>{s:.1f}</b><br>({c} interactions)" if s is not None and c is not None else "Unavailable"
+        for s, c in zip(health_scores, comment_counts)
+    ]
+    fig.add_trace(go.Bar(x=week_labels, y=health_scores, name='Health Score', marker_color='rgba(30, 144, 255, 0.6)', text=health_text, textposition='outside', textfont=dict(color='black', weight='bold')), secondary_y=False)
     fig.add_trace(go.Bar(x=week_labels, y=severe_counts, name='Severe Flags (Tier-2 Verified)', marker=dict(color='crimson', line=dict(color='black', width=1.5)), text=[f"<b>{s}</b>" if (s is not None and s > 0) else "" for s in severe_counts], textposition='outside', textfont=dict(color='black', size=12, weight='bold')), secondary_y=True)
     fig.add_trace(go.Bar(x=week_labels, y=scam_counts, name='Scam Flags (Tier-2 Verified)', marker=dict(color='rgba(255, 215, 0, 0.7)', line=dict(color='black', width=1)), text=[f"<b>{s}</b>" if (s is not None and s > 0) else "" for s in scam_counts], textposition='outside', textfont=dict(color='black', size=12, weight='bold')), secondary_y=True)
 
@@ -3047,6 +3072,12 @@ def create_dual_trend_plot(selected_week, selected_year, selected_week_data, mod
     )
     fig.update_yaxes(title_text="<b>Flagged Items Count</b>", secondary_y=False, range=[0, 10.5])
     fig.update_yaxes(title_text="", secondary_y=True, range=[0, max_secondary * 1.2 + 5], showgrid=True, gridcolor='lightgrey', gridwidth=1)
+    if unavailable_weeks:
+        fig.add_annotation(
+            text=f"Database unavailable for: {', '.join(unavailable_weeks)}",
+            xref="paper", yref="paper", x=0.5, y=1.08, showarrow=False,
+            font=dict(size=11, color="crimson"),
+        )
     return fig
 
 def create_radar_plot(avg):
@@ -3095,13 +3126,14 @@ def create_radar_plot(avg):
     return fig
 
 def create_emotion_trend_chart(selected_week, selected_year, model_id):
-    engine, snowflake_available = get_snowflake_engine()
-    if not snowflake_available:
+    try:
+        df_selected = load_data_for_week(selected_week, int(selected_year), show_progress=False)
+    except WeeklyDataLoadError as e:
+        print(f"Selected emotion trend load failed for Week {selected_week}, {selected_year}: {e}", file=sys.stderr)
         fig = go.Figure()
-        fig.add_annotation(text="Emotion trend requires database connection", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
+        fig.add_annotation(text="Emotion trend unavailable because the database load failed", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
         return fig
-    
-    df_selected = load_data_for_week(selected_week, int(selected_year), show_progress=False)
+
     if df_selected.empty: return go.Figure()
     
     df_em_selected = analyze_emotions_cached(df_selected, model_id=model_id)
@@ -3123,10 +3155,19 @@ def create_emotion_trend_chart(selected_week, selected_year, model_id):
     
     emotion_data = {emotion:[] for emotion in top_6_emotion_names}
     week_labels =[]
+    unavailable_weeks = []
     
     for year, week in weeks_to_display:
-        df = load_data_for_week(week, year, show_progress=False)
-        if df.empty:
+        try:
+            df = load_data_for_week(week, year, show_progress=False)
+        except WeeklyDataLoadError as e:
+            print(f"Historical emotion trend load failed for Week {week}, {year}: {e}", file=sys.stderr)
+            unavailable_weeks.append(f"W{week}/{year}")
+            df = None
+
+        if df is None:
+            for emotion in top_6_emotion_names: emotion_data[emotion].append(None)
+        elif df.empty:
             for emotion in top_6_emotion_names: emotion_data[emotion].append(0)
         else:
             df_em = analyze_emotions_cached(df, model_id=model_id)
@@ -3141,10 +3182,16 @@ def create_emotion_trend_chart(selected_week, selected_year, model_id):
         color = distinct_colors[i % len(distinct_colors)]
         fig.add_trace(go.Scatter(x=week_labels, y=emotion_data[emotion], mode='lines+markers', name=emotion.title(), line=dict(width=3, color=color), marker=dict(size=8)))
         last_value = emotion_data[emotion][-1]
-        if last_value > 0:
+        if last_value is not None and last_value > 0:
             fig.add_annotation(x=week_labels[-1], y=last_value, text=emotion.title(), showarrow=False, xshift=40, font=dict(size=10, color=color), bgcolor="rgba(255,255,255,0.8)", bordercolor=color, borderwidth=1)
     
     fig.update_layout(title=f"Top 6 Negative Emotion Trends (Ending Week {selected_week})", xaxis_title="Week", yaxis_title="Emotion Intensity (%)", height=450, template="plotly_white", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), showlegend=True, margin=dict(r=120))
+    if unavailable_weeks:
+        fig.add_annotation(
+            text=f"Database unavailable for: {', '.join(unavailable_weeks)}",
+            xref="paper", yref="paper", x=0.5, y=1.12, showarrow=False,
+            font=dict(size=11, color="crimson"),
+        )
     return fig
 
 
@@ -4696,7 +4743,8 @@ def run_dashboard():
                     year = int(selected_year)
                     week_num = extract_week_number(selected_week_str)
                     
-                    try: 
+                    history_load_error = None
+                    try:
                         start_date_of_selected_week, _ = get_week_dates(year, week_num)
                         for offset in range(lookback_weeks):
                             target_date = start_date_of_selected_week - timedelta(weeks=offset)
@@ -4707,10 +4755,15 @@ def run_dashboard():
                                 temp_em = analyze_emotions_cached(temp_df, model_id=active_model_id)
                                 all_dfs.append(temp_df)
                                 all_em_dfs.append(temp_em)
+                    except WeeklyDataLoadError as e:
+                        history_load_error = e
                     except ValueError:
                         pass
                     
-                    if all_dfs:
+                    if history_load_error is not None:
+                        print(f"Continuous-learning history load failed: {history_load_error}", file=sys.stderr)
+                        st.error("Historical database loading failed. No partial training dataset was generated.")
+                    elif all_dfs:
                         combined_df = pd.concat(all_dfs, ignore_index=True)
                         combined_df_em = pd.concat(all_em_dfs, ignore_index=True)
                         
@@ -5203,7 +5256,13 @@ def run_dashboard():
         progress_ui = AnalysisProgressUI()
         progress_ui.set_overall_message(":material/search: Loading weekly interactions from Snowflake...")
 
-        df = load_data_for_week(week_num, year, show_progress=False)
+        try:
+            df = load_data_for_week(week_num, year, show_progress=False)
+        except WeeklyDataLoadError as e:
+            print(f"Selected-week load failed: {e}", file=sys.stderr)
+            st.error("Database loading failed for the selected week. This is not a no-data result; please try again or contact an administrator.")
+            st.session_state.analysis_run = False
+            st.stop()
         if df.empty:
             st.error("No data found for the selected week.")
             st.session_state.analysis_run = False
@@ -5221,7 +5280,13 @@ def run_dashboard():
         st.session_state['last_initial_flagged_count'] = len(initially_flagged)
 
         # Step 3 & 4: Scam Check
-        scam_detection_df, scam_window_weeks = load_scam_detection_window(week_num, year, window_weeks=4)
+        try:
+            scam_detection_df, scam_window_weeks = load_scam_detection_window(week_num, year, window_weeks=4)
+        except WeeklyDataLoadError as e:
+            print(f"Rolling scam window load failed: {e}", file=sys.stderr)
+            st.warning("The rolling scam history could not be loaded. Scam detection will use the successfully loaded selected week only.")
+            scam_detection_df = df.copy()
+            scam_window_weeks = [f"W{week_num}/{year}"]
         if scam_detection_df is None or scam_detection_df.empty:
             # Safety fallback to selected-week-only behavior if historical pulls are unavailable.
             scam_detection_df = df.copy()
@@ -5288,10 +5353,15 @@ def run_dashboard():
         # Historical data (Cached version, NO UI)
         prev_week_date = datetime.strptime(f'{year}-W{week_num:02d}-1', "%G-W%V-%u").date() - timedelta(weeks=1)
         prev_year, prev_week, _ = prev_week_date.isocalendar()
-        df_prev = load_data_for_week(prev_week, prev_year, show_progress=False)
-        df_em_prev = analyze_emotions_cached(df_prev, model_id=active_model_id)
-        avg_prev = df_em_prev.mean() if not df_em_prev.empty else pd.Series()
-        score_prev = compute_health_score(avg_prev)
+        try:
+            df_prev = load_data_for_week(prev_week, prev_year, show_progress=False)
+            df_em_prev = analyze_emotions_cached(df_prev, model_id=active_model_id)
+            avg_prev = df_em_prev.mean() if not df_em_prev.empty else pd.Series()
+            score_prev = compute_health_score(avg_prev)
+        except WeeklyDataLoadError as e:
+            print(f"Previous-week comparison load failed: {e}", file=sys.stderr)
+            st.warning("Previous-week comparison is unavailable because its database load failed.")
+            score_prev = None
         
         mild_moderate_comments = get_mild_moderate_comments(df_em, df, top_n=50)
         st.session_state['scam_last_run'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -9,9 +9,9 @@ plotly
 python-dotenv==1.0.0
 pytz
 requests
-sqlalchemy
-snowflake-sqlalchemy
-snowflake-connector-python>=3.0.0
+SQLAlchemy==2.0.44
+snowflake-sqlalchemy==1.11.1
+snowflake-connector-python>=3.0.0,<5.0.0
 # Python-version specific ML pins to keep both local (3.11) and cloud (3.14) stable.
 # numpy<2 is mandatory below for torch 2.2.2 / transformers 4.41.2 — newer numpy breaks the lazy pipeline import.
 transformers==4.41.2; python_version < "3.14"
